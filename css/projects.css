@@ -1,0 +1,64 @@
+/* ─── Projects page ────────────────────────────────────────────────────────── */
+
+.page  { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+/* Section card */
+.section        { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; }
+.section-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.section-title  { font-weight: 700; font-size: 15px; flex: 1; }
+
+/* Table */
+table  { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+td          { padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafbfc; }
+.td-muted   { color: var(--text-muted); }
+.td-clamp   { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty-row  { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+.row-actions { display: flex; gap: 4px; }
+
+/* Members section */
+.members-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+@media (max-width: 700px) { .members-grid { grid-template-columns: 1fr; } }
+.members-col-title { font-weight: 600; font-size: 13px; margin-bottom: 12px; }
+
+/* Export panel */
+.export-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 600px) { .export-grid { grid-template-columns: 1fr; } }
+.export-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: var(--surface);
+}
+.export-section h5 {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 12px;
+}
+
+/* Status selects inside forms */
+.status-select-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

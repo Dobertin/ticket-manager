@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard · TicketFlow</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/dashboard.css"/>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="dashboard.html" class="nav-logo">⚡ TicketFlow</a>
+  <a href="dashboard.html" class="nav-link" data-nav="dashboard.html">Dashboard</a>
+  <a href="projects.html"  class="nav-link" data-nav="projects.html">Proyectos</a>
+  <span class="nav-spacer"></span>
+  <div id="navUser"></div>
+</nav>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <h1>Dashboard</h1>
+  <select id="filterProject"><option value="">Cargando…</option></select>
+  <select id="filterAssignee"><option value="">Cargando…</option></select>
+  <label class="check-label">
+    <input type="checkbox" id="showDone"/> Mostrar finalizados / archivados
+  </label>
+</div>
+
+<!-- BOARD -->
+<div class="board-wrap">
+  <div class="board" id="board">
+    <div style="padding:40px;color:var(--text-muted);font-size:13px">Cargando tablero…</div>
+  </div>
+</div>
+
+<!-- ── MODAL COMMENTS ──────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modalComments">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="commentModalTitle">Comentarios</span>
+      <button class="modal-close" onclick="closeModal('modalComments')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="commentList" class="comment-list"></div>
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div class="form-label" style="margin-bottom:6px">Nuevo comentario</div>
+        <textarea id="commentInput" placeholder="Escribe tu comentario…"></textarea>
+        <div style="margin-top:8px;display:flex;justify-content:flex-end">
+          <button class="btn btn-primary btn-sm btn-send-comment" onclick="submitComment()">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL STATUS ────────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modalStatus">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Cambiar estado</span>
+      <button class="modal-close" onclick="closeModal('modalStatus')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="statusOptions" style="display:flex;flex-direction:column;gap:7px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts — order matters -->
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/api.js"></script>
+<script src="js/comments.js"></script>
+<script src="js/dashboard.js"></script>
+<script>
+  (async () => {
+    const user = await requireAuth();
+    if (!user) return;
+    await ensureProfile(user);
+    setActiveNav();
+    renderNavUser();
+    await initDashboard(user);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Proyectos · TicketFlow</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/projects.css"/>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="dashboard.html" class="nav-logo">⚡ TicketFlow</a>
+  <a href="dashboard.html" class="nav-link" data-nav="dashboard.html">Dashboard</a>
+  <a href="projects.html"  class="nav-link" data-nav="projects.html">Proyectos</a>
+  <span class="nav-spacer"></span>
+  <div id="navUser"></div>
+</nav>
+
+<div class="page">
+
+  <!-- ── PROJECTS TABLE ──────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Proyectos</span>
+      <button class="btn btn-ghost btn-sm" onclick="openExportModal()">↓ Exportar</button>
+      <button class="btn btn-primary btn-sm" onclick="openProjectModal()">+ Nuevo proyecto</button>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Nombre</th><th>Descripción</th><th>Estado</th>
+        <th>Responsable</th><th>Creado</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="projectsBody">
+        <tr><td colspan="6" class="empty-row">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── PROJECT MEMBERS ─────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Colaboradores por proyecto</span>
+    </div>
+    <div class="members-grid">
+
+      <!-- Left: select project + list members -->
+      <div>
+        <div class="members-col-title">Miembros actuales</div>
+        <div class="form-row">
+          <label class="form-label">Proyecto</label>
+          <select id="memberProjectSel" onchange="loadProjectMembers()">
+            <option value="">— Selecciona proyecto —</option>
+          </select>
+        </div>
+        <div id="memberList" style="min-height:60px"></div>
+      </div>
+
+      <!-- Right: add existing + invite by email -->
+      <div>
+        <div class="members-col-title">Agregar colaborador</div>
+
+        <!-- Existing user -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
+          <div class="form-label" style="margin-bottom:10px">Usuario existente</div>
+          <div class="form-row">
+            <label class="form-label">Usuario</label>
+            <select id="memberUserSel"><option value="">— Selecciona —</option></select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Rol</label>
+            <select id="memberRoleSel">
+              <option value="member">Miembro</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addExistingMember()">+ Agregar</button>
+        </div>
+
+        <!-- Invite by email -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
+          <div class="form-label" style="margin-bottom:10px">Invitar por correo (Magic Link)</div>
+          <div class="form-row">
+            <label class="form-label">Correo</label>
+            <input type="email" id="inviteEmail" placeholder="colaborador@correo.com"/>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="inviteMemberByEmail()">✉ Enviar invitación</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ── MODAL NEW/EDIT PROJECT ──────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modalProject">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="projectModalTitle">Nuevo proyecto</span>
+      <button class="modal-close" onclick="closeModal('modalProject')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="projectId"/>
+      <div class="form-row"><label class="form-label">Nombre</label>
+        <input type="text" id="projectName" placeholder="Nombre del proyecto"/></div>
+      <div class="form-row"><label class="form-label">Descripción</label>
+        <textarea id="projectDesc" placeholder="Descripción opcional…"></textarea></div>
+      <div class="form-row"><label class="form-label">Responsable</label>
+        <select id="projectOwner"><option value="">Sin asignar</option></select></div>
+      <div class="form-row"><label class="form-label">Estado</label>
+        <select id="projectStatus">
+          <option value="active">Activo</option>
+          <option value="archived">Archivado</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalProject')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProject()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL PROJECT TREE ──────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modalProjectTree">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="treeModalTitle">Editar proyecto</span>
+      <button class="modal-close" onclick="closeModal('modalProjectTree')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-row" style="margin:0"><label class="form-label">Nombre</label>
+          <input type="text" id="treeProjectName"/></div>
+        <div class="form-row" style="margin:0"><label class="form-label">Estado</label>
+          <select id="treeProjectStatus">
+            <option value="active">Activo</option>
+            <option value="archived">Archivado</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin:0;grid-column:1/-1"><label class="form-label">Descripción</label>
+          <textarea id="treeProjectDesc" style="min-height:46px"></textarea></div>
+        <div class="form-row" style="margin:0"><label class="form-label">Responsable</label>
+          <select id="treeProjectOwner"><option value="">Sin asignar</option></select></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveTreeProjectMeta()" style="margin-bottom:16px">
+        Guardar datos del proyecto
+      </button>
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <strong style="font-size:13px">Tareas</strong>
+        <button class="btn btn-primary btn-sm" onclick="openAddTaskInline()">+ Agregar tarea</button>
+      </div>
+      <!-- Add task inline form -->
+      <div id="addTaskInline" style="display:none;margin-bottom:12px">
+        <div class="add-inline">
+          <input type="text" id="newTaskTitle" placeholder="Título de la tarea" style="flex:2;min-width:180px"/>
+          <select id="newTaskStatus" style="width:140px">
+            <option value="backlog">Backlog</option>
+            <option value="in_progress">En proceso</option>
+            <option value="in_review">En revisión</option>
+            <option value="blocked">Bloqueado</option>
+            <option value="done">Finalizado</option>
+          </select>
+          <select id="newTaskAssignee" style="width:160px"><option value="">Sin asignar</option></select>
+          <button class="btn btn-primary btn-sm" onclick="addTask()">Agregar</button>
+          <button class="btn btn-ghost btn-sm" onclick="closeAddTaskInline()">✕</button>
+        </div>
+      </div>
+      <!-- Task tree -->
+      <div id="taskTree"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL EDIT TASK ─────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modalEditTask">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Editar tarea</span>
+      <button class="modal-close" onclick="closeModal('modalEditTask')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editTaskId"/>
+      <div class="form-row"><label class="form-label">Título</label>
+        <input type="text" id="editTaskTitle"/></div>
+      <div class="form-row"><label class="form-label">Descripción</label>
+        <textarea id="editTaskDesc"></textarea></div>
+      <div class="status-select-row">
+        <div class="form-row"><label class="form-label">Estado</label>
+          <select id="editTaskStatus">
+            <option value="backlog">Backlog</option><option value="in_progress">En proceso</option>
+            <option value="in_review">En revisión</option><option value="blocked">Bloqueado</option>
+            <option value="done">Finalizado</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">Responsable</label>
+          <select id="editTaskAssignee"><option value="">Sin asignar</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalEditTask')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditTask()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL EDIT SUBTASK ──────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modalEditSubtask">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Editar subtarea</span>
+      <button class="modal-close" onclick="closeModal('modalEditSubtask')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editSubtaskId"/>
+      <div class="form-row"><label class="form-label">Título</label>
+        <input type="text" id="editSubtaskTitle"/></div>
+      <div class="status-select-row">
+        <div class="form-row"><label class="form-label">Estado</label>
+          <select id="editSubtaskStatus">
+            <option value="backlog">Backlog</option><option value="in_progress">En proceso</option>
+            <option value="in_review">En revisión</option><option value="blocked">Bloqueado</option>
+            <option value="done">Finalizado</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">Responsable</label>
+          <select id="editSubtaskAssignee"><option value="">Sin asignar</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalEditSubtask')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditSubtask()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL EXPORT ────────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modalExport">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Exportar a Excel</span>
+      <button class="modal-close" onclick="closeModal('modalExport')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="export-grid">
+        <div class="export-section">
+          <h5>Por proyecto</h5>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Exporta proyectos con sus tareas y subtareas.</p>
+          <div class="form-row"><label class="form-label">Proyecto</label>
+            <select id="exportProjectSel"><option value="all">Todos los proyectos</option></select></div>
+          <button class="btn btn-primary btn-sm" onclick="runExportProjects()">↓ Exportar proyectos</button>
+        </div>
+        <div class="export-section">
+          <h5>Subtareas con filtros</h5>
+          <div class="form-row"><label class="form-label">Fecha desde (updated_at)</label>
+            <input type="date" id="exportDateFrom"/></div>
+          <div class="form-row"><label class="form-label">Fecha hasta</label>
+            <input type="date" id="exportDateTo"/></div>
+          <div class="form-row"><label class="form-label">Estados</label>
+            <div id="exportStatusChecks" style="display:flex;flex-direction:column;gap:5px;margin-top:4px"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="runExportSubtasks()">↓ Exportar subtareas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/api.js"></script>
+<script src="js/projects.js"></script>
+<script>
+  function openExportModal() {
+    populateExportSelects();
+    openModal('modalExport');
+  }
+
+  (async () => {
+    const user = await requireAuth();
+    if (!user) return;
+    await ensureProfile(user);
+    setActiveNav();
+    renderNavUser();
+    await initProjects(user);
+  })();
+</script>
+</body>
+</html>
