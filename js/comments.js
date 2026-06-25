@@ -1,10 +1,10 @@
 // ─── Comments module ──────────────────────────────────────────────────────────
 
 let _activeCommentEntity = null; // { type, id, title }
-let _currentUser = null;
+let _commentsCurrentUser  = null;
 
 function initComments(currentUser) {
-  _currentUser = currentUser;
+  _commentsCurrentUser  = currentUser;
 }
 
 async function openCommentModal(entityType, entityId, title) {
@@ -57,7 +57,7 @@ async function submitComment() {
   if (!_activeCommentEntity) return;
   const content = document.getElementById('commentInput').value.trim();
   if (!content) { toast('Escribe un comentario primero', 'info'); return; }
-  if (!_currentUser) { toast('Debes iniciar sesión', 'error'); return; }
+  if (!_commentsCurrentUser ) { toast('Debes iniciar sesión', 'error'); return; }
 
   const btn = document.querySelector('#modalComments .btn-send-comment');
   if (btn) btn.disabled = true;
@@ -66,7 +66,7 @@ async function submitComment() {
     entity_type: _activeCommentEntity.type,
     entity_id:   _activeCommentEntity.id,
     content,
-    author_id:   _currentUser.id,
+    author_id:   _commentsCurrentUser .id,
   });
 
   if (btn) btn.disabled = false;

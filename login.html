@@ -7,34 +7,28 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link rel="stylesheet" href="css/base.css"/>
   <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); }
     .login-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: var(--shadow-md);
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-lg); padding:40px 36px;
+      width:100%; max-width:380px; box-shadow:var(--shadow-md);
     }
-    .login-logo  { font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 4px; letter-spacing: -.5px; }
-    .login-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
-    .divider-or  { display: flex; align-items: center; gap: 10px; margin: 20px 0; color: var(--text-muted); font-size: 12px; }
-    .divider-or::before, .divider-or::after { content:''; flex:1; height:1px; background:var(--border); }
-    #loginMsg    { display: none; padding: 10px 12px; border-radius: var(--radius); font-size: 13px; margin-bottom: 14px; border: 1px solid currentColor; }
-    .btn-github  {
-      width: 100%; padding: 10px; background: #24292e; color: #fff;
-      border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px;
-      transition: background .15s;
-    }
-    .btn-github:hover { background: #1a1e22; }
-    .btn-magic {
-      width: 100%; padding: 9px; background: var(--accent); color: #fff;
-      border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: background .15s;
-    }
-    .btn-magic:hover { background: var(--accent-hover); }
+    .login-logo { font-size:22px; font-weight:800; color:var(--accent); margin-bottom:4px; letter-spacing:-.5px; }
+    .login-sub  { font-size:13px; color:var(--text-muted); margin-bottom:28px; }
+
+    .tab-row  { display:flex; border-bottom:1px solid var(--border); margin-bottom:20px; }
+    .tab-btn  { flex:1; padding:8px; background:none; border:none; cursor:pointer;
+                font-size:13px; font-weight:500; color:var(--text-muted);
+                border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+    .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    #loginMsg { display:none; padding:10px 12px; border-radius:var(--radius);
+                font-size:13px; margin-bottom:14px; border:1px solid; }
+
+    .btn-submit { width:100%; padding:10px; background:var(--accent); color:#fff;
+                  border:none; border-radius:var(--radius); font-size:13px; font-weight:600;
+                  cursor:pointer; transition:background .15s; margin-top:4px; }
+    .btn-submit:hover { background:var(--accent-hover); }
   </style>
 </head>
 <body>
@@ -42,45 +36,86 @@
   <div class="login-logo">⚡ TicketFlow</div>
   <div class="login-sub">Gestión de proyectos y tareas</div>
 
+  <!-- Tabs -->
+  <div class="tab-row">
+    <button class="tab-btn active" id="tabLogin"    onclick="switchTab('login')">Iniciar sesión</button>
+    <button class="tab-btn"        id="tabRegister" onclick="switchTab('register')">Registrarse</button>
+  </div>
+
   <div id="loginMsg"></div>
 
-  <!-- GitHub -->
-  <button class="btn-github" onclick="loginWithGitHub()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-      <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483
-        0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466
-        -.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832
-        .092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688
-        -.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004
-        1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651
-        .64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855
-        0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484
-        17.522 2 12 2z"/>
-    </svg>
-    Continuar con GitHub
-  </button>
-
-  <div class="divider-or">o</div>
-
-  <!-- Magic Link -->
+  <!-- Email -->
   <div class="form-row">
     <label class="form-label">Correo electrónico</label>
-    <input type="email" id="magicEmail" placeholder="tu@correo.com"
-      onkeydown="if(event.key==='Enter') loginWithMagicLink(document.getElementById('magicEmail').value)"/>
+    <input type="email" id="authEmail" placeholder="tu@correo.com"
+      onkeydown="if(event.key==='Enter') handleSubmit()"/>
   </div>
-  <button class="btn-magic" onclick="loginWithMagicLink(document.getElementById('magicEmail').value)">
-    Enviar enlace de acceso
-  </button>
+
+  <!-- Password -->
+  <div class="form-row">
+    <label class="form-label">Contraseña</label>
+    <input type="password" id="authPassword" placeholder="Mínimo 6 caracteres"
+      onkeydown="if(event.key==='Enter') handleSubmit()"/>
+  </div>
+
+  <!-- Name (register only) -->
+  <div class="form-row" id="nameRow" style="display:none">
+    <label class="form-label">Tu nombre</label>
+    <input type="text" id="authName" placeholder="Nombre completo"/>
+  </div>
+
+  <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Iniciar sesión</button>
 
   <p style="font-size:11px;color:var(--text-muted);margin-top:16px;text-align:center;line-height:1.6">
-    Al ingresar aceptas que tus datos se almacenen de forma segura en Supabase.
+    Tus datos se almacenan de forma segura en Supabase.
   </p>
 </div>
 
 <script src="js/supabase-client.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  // If already logged in, redirect
+  let _mode = 'login';
+
+  function switchTab(mode) {
+    _mode = mode;
+    document.getElementById('tabLogin').classList.toggle('active',    mode === 'login');
+    document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+    document.getElementById('nameRow').style.display   = mode === 'register' ? 'block' : 'none';
+    document.getElementById('submitBtn').textContent   = mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión';
+    document.getElementById('loginMsg').style.display  = 'none';
+  }
+
+  async function handleSubmit() {
+    const email    = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const name     = document.getElementById('authName').value.trim();
+
+    if (_mode === 'login') {
+      await loginWithPassword(email, password);
+    } else {
+      // Inject name into metadata before signup
+      if (name) {
+        // We pass name via options so ensureProfile picks it up
+        if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
+        if (password.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres.'); return; }
+        const { data, error } = await db.auth.signUp({
+          email, password,
+          options: { data: { full_name: name } }
+        });
+        if (error) { showLoginError(error.message); return; }
+        if (data.session) {
+          window.location.replace('dashboard.html');
+        } else {
+          showLoginSuccess('¡Cuenta creada! Ahora inicia sesión.');
+          switchTab('login');
+        }
+      } else {
+        await registerWithPassword(email, password);
+      }
+    }
+  }
+
+  // If already logged in, go straight to dashboard
   (async () => {
     const session = await getCurrentSession();
     if (session) window.location.replace('dashboard.html');

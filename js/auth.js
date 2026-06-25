@@ -20,43 +20,26 @@ async function requireAuth() {
   return session.user;
 }
 
-// Upsert profile row after login (name + avatar from OAuth or email)
-async function ensureProfile(user) {
-  if (!user) return;
-  const fullName  = user.user_metadata?.full_name
-                 || user.user_metadata?.name
-                 || user.email?.split('@')[0]
-                 || 'Usuario';
-  const avatarUrl = user.user_metadata?.avatar_url || null;
-
-  await db.from('profiles').upsert(
-    { id: user.id, full_name: fullName, avatar_url: avatarUrl },
-    { onConflict: 'id', ignoreDuplicates: false }
-  );
-}
-
 // ─── Login actions ────────────────────────────────────────────────────────────
 
-async function loginWithGitHub() {
-  const { error } = await db.auth.signInWithOAuth({
-    provider: 'github',
-    options: {
-      redirectTo: `${location.origin}${location.pathname.replace('login.html','')}dashboard.html`
-    }
-  });
-  if (error) showLoginError('Error al conectar con GitHub: ' + error.message);
+async function loginWithPassword(email, password) {
+  if (!email || !password) { showLoginError('Ingresa correo y contraseña.'); return; }
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  if (error) { showLoginError(error.message); return; }
+  window.location.replace('dashboard.html');
 }
 
-async function loginWithMagicLink(email) {
-  if (!email) { showLoginError('Ingresa tu correo electrónico.'); return; }
-  const { error } = await db.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: `${location.origin}${location.pathname.replace('login.html','')}dashboard.html`
-    }
-  });
+async function registerWithPassword(email, password) {
+  if (!email || !password) { showLoginError('Ingresa correo y contraseña.'); return; }
+  if (password.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres.'); return; }
+  const { data, error } = await db.auth.signUp({ email, password });
   if (error) { showLoginError(error.message); return; }
-  showLoginSuccess('¡Revisa tu correo! Te enviamos un enlace de acceso.');
+  // If email confirmation is disabled in Supabase, session is immediate
+  if (data.session) {
+    window.location.replace('dashboard.html');
+  } else {
+    showLoginSuccess('¡Cuenta creada! Revisa tu correo para confirmar, o inicia sesión directamente.');
+  }
 }
 
 async function logout() {
@@ -64,11 +47,15 @@ async function logout() {
   window.location.replace('login.html');
 }
 
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+
 function showLoginError(msg) {
   const el = document.getElementById('loginMsg');
   if (!el) return;
   el.textContent = msg;
+  el.style.background = '#fef2f2';
   el.style.color = '#dc2626';
+  el.style.borderColor = '#fecaca';
   el.style.display = 'block';
 }
 
@@ -76,7 +63,9 @@ function showLoginSuccess(msg) {
   const el = document.getElementById('loginMsg');
   if (!el) return;
   el.textContent = msg;
+  el.style.background = '#f0fdf4';
   el.style.color = '#16a34a';
+  el.style.borderColor = '#bbf7d0';
   el.style.display = 'block';
 }
 
@@ -90,7 +79,7 @@ async function renderNavUser() {
   if (!el) return;
   el.innerHTML = `
     ${avatar ? `<img src="${avatar}" style="width:26px;height:26px;border-radius:50%;object-fit:cover" alt="">` : ''}
-    <span style="font-size:13px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(name)}</span>
+    <span style="font-size:13px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(name)}</span>
     <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
   `;
 }

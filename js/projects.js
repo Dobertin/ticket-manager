@@ -86,10 +86,6 @@ async function saveProject() {
   } else {
     const { data, error } = await apiCreateProject({ name, description: desc, owner_id: owner, status });
     if (error) { toast('Error al crear proyecto', 'error'); console.error(error); return; }
-    // Auto-add creator as owner in project_members
-    if (data?.id && _currentUser?.id) {
-      await apiAddProjectMember(data.id, _currentUser.id, 'owner');
-    }
     toast('Proyecto creado', 'success');
   }
   closeModal('modalProject');

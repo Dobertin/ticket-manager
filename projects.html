@@ -286,7 +286,6 @@
   (async () => {
     const user = await requireAuth();
     if (!user) return;
-    await ensureProfile(user);
     setActiveNav();
     renderNavUser();
     await initProjects(user);

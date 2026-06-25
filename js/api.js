@@ -15,9 +15,17 @@ async function apiGetProfile(userId) {
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 async function apiGetProjects() {
-  const { data, error } = await db.from('projects')
-    .select('*, owner:profiles(id, full_name)')
+  const { data, error } = await db
+    .from('projects')
+    .select(`
+      *,
+      owner:profiles!projects_owner_id_fkey(
+        id,
+        full_name
+      )
+    `)
     .order('created_at', { ascending: false });
+
   if (error) console.error('apiGetProjects', error);
   return data || [];
 }

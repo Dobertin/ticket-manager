@@ -5,7 +5,7 @@ let _allTasks    = [];
 let _projects    = [];
 let _members     = [];
 let _dragId      = null;
-let _currentUser = null;
+let _dashboardCurrentUser  = null;
 
 const COLS = [
   { key: 'backlog',     label: 'Backlog',      dot: '#94a3b8' },
@@ -17,7 +17,7 @@ const COLS = [
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function initDashboard(user) {
-  _currentUser = user;
+  _dashboardCurrentUser  = user;
   initComments(user);
 
   const [subtasks, tasks, projects, members] = await Promise.all([
@@ -108,6 +108,9 @@ function renderCard(s) {
   const pp = projectPct(s.task?.project?.id);
   const tp = taskPct(s.task?.id);
   const assignee = escHtml(s.assignee?.full_name || '—');
+  
+  // Escapa el título correctamente para usarlo en el atributo onclick
+  const safeTitle = s.title.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'");
 
   return `
   <div class="card" id="card-${s.id}" draggable="true"
@@ -125,7 +128,7 @@ function renderCard(s) {
       <span class="assignee-chip">${assignee}</span>
     </div>
     <div class="card-actions">
-      <button class="card-btn" onclick="openCommentModal('subtask','${s.id}',${JSON.stringify(escHtml(s.title))})">
+      <button class="card-btn" onclick="openCommentModal('subtask','${s.id}','${safeTitle}')">
         💬 Comentar
       </button>
       <button class="card-btn" onclick="openStatusModal('${s.id}')">
